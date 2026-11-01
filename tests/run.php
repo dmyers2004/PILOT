@@ -173,6 +173,25 @@ function artefacts(string $bin, string $dir, int $pass, int $fail): array
             return null;
         },
 
+        'sc: colours the cells it types into' => function () use ($bin): ?string {
+            [$out] = run($bin, [
+                '--c64', '-e',
+                "SC:INK RED\nTH:AB\nSC:INK LTGREEN, REVERSE ON\nTH:CD\nSC:AT 5 10\nT:E",
+            ]);
+            // Final repaint: row 1 reads AB in red, then CD reversed green.
+            if (!str_contains($out, "\e[48;2;0;0;170m\e[38;2;136;0;0mAB")) {
+                return 'AB is not red on blue';
+            }
+            if (!str_contains($out, "\e[48;2;170;255;102m\e[38;2;0;0;170mCD")) {
+                return 'CD is not reversed light green';
+            }
+            // AT 5 10 is screen row 5, column 10 -> terminal row 6, column 12.
+            if (!str_contains($out, "\e[6;12H")) {
+                return 'AT did not place the cursor';
+            }
+            return null;
+        },
+
         'sound stays silent without --sound' => function () use ($bin, $tmp): ?string {
             [$out, $code] = run($bin, ['-e', 'S:C4 10', '--graphics', "$tmp/x.svg"]);
             return ($out === '' && $code === 0) ? null : 'unexpected output: ' . $out;

@@ -84,6 +84,7 @@ unchanged.
 | `D:` | `DIM:` | declare arrays |
 | `G:` | `GRAPHICS:` | drive the turtle |
 | `S:` | `SOUND:` | play notes |
+| `SC:` | `SCREEN:` | colour and place text on the C64 screen |
 | `L:` | `LINK:` | hand over to another file |
 
 ### Conditioners
@@ -259,6 +260,7 @@ Nothing is audible unless you ask for a file:
 | `hangman.plt` | string handling — `MID`, `LEN`, `INSTR`, built up a letter at a time |
 | `battleship.plt` | a hidden fleet on a lettered grid — one array standing in for two dimensions |
 | `risk.plt` | the forty-two territory map, dice combat, and an opponent |
+| `colours.plt` | the sixteen colours, reverse video and the cursor — needs `--c64` |
 | `spiral.plt` | a square spiral with a pentagram over it |
 | `rosette.plt` | twelve circles round one point, cycling through the palette |
 | `sine.plt` | the turtle plotting a computed curve |
@@ -284,6 +286,42 @@ It needs a terminal that does 24-bit colour, which most now do. Programs
 written for a wider terminal still run — they just wrap. `risk.plt` is laid
 out to fit the forty columns exactly, board and all.
 
+### Driving it from a program
+
+`SC:` takes a run of words, the way `G:` does:
+
+```
+SC:BORDER BLACK, PAPER BLUE, CLEAR
+SC:AT 5 10, INK YELLOW
+T:PLACED AND YELLOW
+SC:REVERSE ON, INK CYAN
+T:AND IN REVERSE
+```
+
+| | |
+| --- | --- |
+| `INK c` / `PEN c` | the colour text is typed in |
+| `PAPER c` | the background, for the whole screen |
+| `BORDER c` | the border, likewise |
+| `REVERSE ON\|OFF` | reverse video; with neither word it toggles |
+| `AT row col` | put the cursor there, counting from 1 |
+| `CLEAR` / `HOME` | blank the screen, or just go to the top left |
+
+A colour is `0`–`15` or one of the sixteen names the turtle uses: `BLACK
+WHITE RED CYAN PURPLE GREEN BLUE YELLOW ORANGE BROWN LTRED DKGREY GREY
+LTGREEN LTBLUE LTGREY`.
+
+Colour works the way it did on the machine. The border and the background
+are one colour each for the whole screen, but the ink belongs to each
+character cell, as it did in colour RAM — so changing the ink colours what
+you type next and leaves what is already up there alone. Typing over a line
+does not rub out the rest of it, either; blank it first if you need to.
+
+Without `--c64` the statement does nothing to the output, in the same way
+`S:` is silent without `--sound`. It still reads its words and still reports
+one it does not know, so a program will not break on the day you add the
+flag.
+
 ## Where this differs from the cartridge
 
 The language is the C64 one. The machine underneath is not, so:
@@ -294,9 +332,10 @@ The language is the C64 one. The machine underneath is not, so:
 - **Sound is a file, not a SID.** One square-wave voice, rendered to WAV. No
   filters, no envelopes beyond a click-suppressing fade, no three voices.
 - **The screen is a terminal**, unless you ask for `--c64`, which draws the
-  40x25 screen and its border in colour. Even then there is no PETSCII, no
-  colour control from inside `T:`, and no cursor addressing: the character
-  set is whatever your terminal has.
+  40x25 screen and its border in colour and gives `SC:` to drive it. Even
+  then there is no PETSCII: colour and cursor control come from `SC:` rather
+  than from control codes buried in `T:` text, and the character set is
+  whatever your terminal has.
 - **Added for comfort:** `#(...)` in typed text, `?` as well as `*` in `M:`
   patterns, semicolon-separated assignments in `C:`, the string functions, and
   long command spellings (`TYPE:` for `T:`).
@@ -313,7 +352,7 @@ src/Interpreter.php  the run loop
 src/Store.php        variables, arrays, the match flag
 src/Turtle.php       G: -> SVG
 src/Sound.php        S: -> WAV
-examples/            fourteen programs, from hello to risk
+examples/            fifteen programs, from hello to risk
 tests/run.php        the test suite
 ```
 

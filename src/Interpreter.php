@@ -17,7 +17,7 @@ final class Interpreter
     private Expression $expr;
     private Turtle $turtle;
     private Sound $sound;
-    private ?Screen $screen = null;
+    private Screen $screen;
 
     private int $pc = 0;
     /** @var array<int,int> return addresses pushed by U: */
@@ -46,9 +46,11 @@ final class Interpreter
         if ($this->opt->seed !== null) {
             mt_srand($this->opt->seed);
         }
-        if ($this->opt->c64) {
-            $this->screen = new Screen($this->out);
-        }
+        // Always built: without --c64 it stays quiet, but still keeps
+        // track of what SC: asks for and still objects to a word it does
+        // not know, so a program does not only break on the day you add
+        // the flag.
+        $this->screen = new Screen($this->out, $this->opt->c64);
     }
 
     public function run(Program $program): void
@@ -73,7 +75,7 @@ final class Interpreter
             }
         } finally {
             // Put the terminal back, however the run ended.
-            $this->screen?->close();
+            $this->screen->close();
         }
 
         $this->finish();
@@ -110,6 +112,7 @@ final class Interpreter
             case 'D':  $this->dim($s); return;
             case 'G':  $this->turtle->command($this->interp($s->arg, $s->srcLine), $s->srcLine); return;
             case 'S':  $this->sound->command($this->interp($s->arg, $s->srcLine), $s->srcLine); return;
+            case 'SC': $this->screen->command($this->interp($s->arg, $s->srcLine), $s->srcLine); return;
             case 'L':  $this->link($s); return;
         }
         throw new PilotError("cannot run '$s->op'", $s->srcLine);
@@ -119,7 +122,7 @@ final class Interpreter
 
     private function write(string $text): void
     {
-        if ($this->screen !== null) {
+        if ($this->opt->c64) {
             $this->screen->write($text);
             return;
         }
@@ -140,7 +143,7 @@ final class Interpreter
             return;
         }
         $text = rtrim($line, "\r\n");
-        if ($this->screen !== null) {
+        if ($this->opt->c64) {
             // The terminal echoed it already; this keeps the screen's own
             // idea of the glass in step.
             $this->screen->accepted($text);

@@ -26,6 +26,7 @@ final class Parser
         'D' => 'D',  'DIM' => 'D',
         'G' => 'G',  'GR' => 'G', 'GRAPHIC' => 'G', 'GRAPHICS' => 'G',
         'S' => 'S',  'SO' => 'S', 'SOUND' => 'S',
+        'SC' => 'SC', 'SCREEN' => 'SC',
         'L' => 'L',  'LINK' => 'L',
     ];
 
