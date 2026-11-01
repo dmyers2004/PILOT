@@ -139,7 +139,18 @@ T:HELLO $NAME, YOU ARE #AGE AND WILL BE #(#AGE+1) NEXT YEAR.
 
 `M:` holds a comma-separated list of patterns. Each is looked for anywhere in
 the answer, ignoring case; the first one that fits wins. `*` stands for any run
-of characters and `?` for exactly one. Write `\,` for a comma inside a pattern.
+of characters (greedily) and `?` for exactly one. A backslash makes the next
+character literal, so `\,` is a comma inside a pattern rather than a separator,
+and `\?` is a question mark rather than a wildcard.
+
+What came before and after the match is the useful part. Matching `I AM` and
+typing `%R` straight back is how `examples/eliza.plt` turns a statement into a
+question — note that `%R` keeps its leading space:
+
+```
+M:I AM
+TY:HOW LONG HAVE YOU BEEN%R?
+```
 
 ```
 A:
@@ -225,6 +236,26 @@ Nothing is audible unless you ask for a file:
 ./bin/pilot --sound=tune.wav examples/scales.plt
 ```
 
+## The examples
+
+| | |
+| --- | --- |
+| `hello.plt` | the smallest thing that asks a question |
+| `quiz.plt` | a lesson: subroutines, two tries per question, a score |
+| `lesson1.plt` | two files, chained with `L:`, sharing their variables |
+| `guess.plt` | guess the number — `RND`, a loop, numeric conditioners |
+| `mathdrill.plt` | times tables, five questions, a percentage at the end |
+| `eliza.plt` | the doctor is in: `%R`, pattern order, a computed jump |
+| `adventure.plt` | three rooms and a lamp, with the rooms as a computed jump |
+| `hangman.plt` | string handling — `MID`, `LEN`, `INSTR`, built up a letter at a time |
+| `spiral.plt` | a square spiral with a pentagram over it |
+| `rosette.plt` | twelve circles round one point, cycling through the palette |
+| `sine.plt` | the turtle plotting a computed curve |
+| `scales.plt` | a scale and a fanfare, for `--sound` |
+
+The three graphics examples have their drawings checked in beside them, so you
+can see what they produce without running anything.
+
 ## Where this differs from the cartridge
 
 The language is the C64 one. The machine underneath is not, so:
@@ -252,7 +283,7 @@ src/Interpreter.php  the run loop
 src/Store.php        variables, arrays, the match flag
 src/Turtle.php       G: -> SVG
 src/Sound.php        S: -> WAV
-examples/            six programs, from hello to turtle graphics
+examples/            twelve programs, from hello to a text adventure
 tests/run.php        the test suite
 ```
 

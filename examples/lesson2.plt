@@ -1,0 +1,17 @@
+R: Part two, reached by L: from lesson1.plt. Run on its own it still
+R: works; #SCORE simply starts at zero.
+
+T:PART TWO: SPELLING.
+T:
+
+T:WHICH COMPUTER WAS PILOT SHIPPED ON IN 1983?
+A:
+M:COMMODORE,C64,C-64
+TY:RIGHT.
+CY:#SCORE=#SCORE+1
+TN:THE COMMODORE 64.
+T:
+
+T:THAT IS #SCORE OUT OF 3 ALTOGETHER.
+T(#SCORE=3):FULL MARKS.
+E:

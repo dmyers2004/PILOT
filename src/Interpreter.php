@@ -163,11 +163,10 @@ final class Interpreter
 
         foreach ($patterns as $k => $raw) {
             $pattern = trim($this->interp($raw, $s->srcLine));
-            $pattern = str_replace(['\\,', '\\\\'], [',', '\\'], $pattern);
             if ($pattern === '') {
                 continue;
             }
-            $regex = strtr(preg_quote($pattern, '/'), ['\*' => '.*', '\?' => '.']);
+            $regex = self::toRegex($pattern);
             if (preg_match('/' . $regex . '/i', $buffer, $m, PREG_OFFSET_CAPTURE)) {
                 $which = $k + 1;
                 $matched = $m[0][0];
@@ -182,6 +181,28 @@ final class Interpreter
         $this->store->setStr('MATCH', $matched);
         $this->store->setStr('LEFT', $left);
         $this->store->setStr('RIGHT', $right);
+    }
+
+    /**
+     * Compile one M: pattern. * is any run of characters and ? is exactly
+     * one; a backslash before * ? , or \ makes that character literal.
+     */
+    private static function toRegex(string $pattern): string
+    {
+        $regex = '';
+        for ($i = 0, $n = strlen($pattern); $i < $n; $i++) {
+            $c = $pattern[$i];
+            if ($c === '\\' && $i + 1 < $n) {
+                $regex .= preg_quote($pattern[++$i], '/');
+            } elseif ($c === '*') {
+                $regex .= '.*';
+            } elseif ($c === '?') {
+                $regex .= '.';
+            } else {
+                $regex .= preg_quote($c, '/');
+            }
+        }
+        return $regex;
     }
 
     // ------------------------------------------------------- flow of control
