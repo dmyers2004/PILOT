@@ -147,7 +147,9 @@ final class Expression
                     }
                     $buf .= $s[$i++];
                 }
-                $toks[] = ['str', $buf];
+                // A quoted literal is literal text, so {HEART} means there
+                // what it means in a T: line.
+                $toks[] = ['str', Petscii::expand($buf)];
                 continue;
             }
 
@@ -468,7 +470,13 @@ final class Expression
                 }
                 return (float) mt_rand(1, $top);
 
-            case 'LEN':   $need(1); return (float) strlen($str(0));
+            case 'LEN':   $need(1); return (float) Petscii::length($str(0));
+            case 'PET':   $need(1);
+                $char = Petscii::char($str(0));
+                if ($char === null) {
+                    throw new PilotError("there is no PETSCII character called '{$str(0)}'", $this->line);
+                }
+                return $char;
             case 'VAL':   $need(1); return self::toNum($str(0));
             case 'STR':   $need(1); return self::toStr($args[0]);
             case 'ASC':   $need(1); return (float) ord($str(0) === '' ? "\0" : $str(0)[0]);
@@ -476,18 +484,20 @@ final class Expression
             case 'UPPER': $need(1); return strtoupper($str(0));
             case 'LOWER': $need(1); return strtolower($str(0));
             case 'TRIM':  $need(1); return trim($str(0));
-            case 'LEFT':  $need(2); return substr($str(0), 0, max(0, (int) $num(1)));
+            case 'LEFT':  $need(2); return Petscii::slice($str(0), 0, max(0, (int) $num(1)));
             case 'RIGHT': $need(2);
                 $n = max(0, (int) $num(1));
-                return $n === 0 ? '' : substr($str(0), -$n);
+                return $n === 0 ? '' : Petscii::slice($str(0), -$n);
             case 'MID':   $need(2);
                 $start = max(1, (int) $num(1)) - 1;
                 return count($args) >= 3
-                    ? substr($str(0), $start, max(0, (int) $num(2)))
-                    : substr($str(0), $start);
+                    ? Petscii::slice($str(0), $start, max(0, (int) $num(2)))
+                    : Petscii::slice($str(0), $start);
             case 'INSTR': $need(2);
                 $at = stripos($str(0), $str(1));
-                return $at === false ? 0.0 : (float) ($at + 1);
+                return $at === false
+                    ? 0.0
+                    : (float) (Petscii::length(substr($str(0), 0, $at)) + 1);
         }
 
         throw new PilotError("unknown function $name()", $this->line);

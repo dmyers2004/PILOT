@@ -129,8 +129,9 @@ C:#SCORE(3)=99
 
 ### Typing text
 
-`T:` and `TH:` expand `#NUM` and `$STR` where they stand, and `#(...)` for a
-whole expression. A backslash before `#`, `$`, `%` or `\` makes it literal.
+`T:` and `TH:` expand `#NUM` and `$STR` where they stand, `#(...)` for a whole
+expression, and `{NAME}` for one of the C64's graphic characters. A backslash
+before `#`, `$`, `%`, `{` or `\` makes it literal.
 Trailing spaces are kept, so `TH:YOUR NAME? ` leaves a gap for the answer.
 
 ```
@@ -202,9 +203,10 @@ to be: two values that both look like numbers compare as numbers, and anything
 else compares as text, ignoring case.
 
 Functions: `ABS INT ROUND SGN SQR SIN COS TAN ATN EXP LOG MIN MAX RND`,
-`LEN VAL STR ASC CHR UPPER LOWER TRIM LEFT RIGHT MID INSTR`, and `PI TIME`.
-`RND()` gives a fraction from 0 to 1; `RND(N)` gives a whole number from 1 to N.
-`MID` counts from 1, as BASIC does.
+`LEN VAL STR ASC CHR UPPER LOWER TRIM LEFT RIGHT MID INSTR PET`, and
+`PI TIME`. `RND()` gives a fraction from 0 to 1; `RND(N)` gives a whole number
+from 1 to N. `MID` counts from 1, as BASIC does. `LEN`, `LEFT`, `RIGHT`, `MID`
+and `INSTR` count characters rather than bytes, so a graphic counts as one.
 
 ### Graphics
 
@@ -261,6 +263,7 @@ Nothing is audible unless you ask for a file:
 | `battleship.plt` | a hidden fleet on a lettered grid — one array standing in for two dimensions |
 | `risk.plt` | the forty-two territory map, dice combat, and an opponent |
 | `colours.plt` | the sixteen colours, reverse video and the cursor — needs `--c64` |
+| `petscii.plt` | the graphic characters: a drawn box, a bar chart, the lot |
 | `spiral.plt` | a square spiral with a pentagram over it |
 | `rosette.plt` | twelve circles round one point, cycling through the palette |
 | `sine.plt` | the turtle plotting a computed curve |
@@ -322,6 +325,45 @@ Without `--c64` the statement does nothing to the output, in the same way
 one it does not know, so a program will not break on the day you add the
 flag.
 
+## PETSCII graphics
+
+The C64's graphic characters were on the fronts of the keys: hold Shift or
+the Commodore key and you got a line, a corner, a block or a card suit. None
+of them can be typed into a file of ASCII, so each has a name, written in
+braces wherever text is:
+
+```
+T:{UL}{HLINE}{HLINE}{UR}
+T:{VLINE}{HEART}{SPADE}{VLINE}
+T:{LL}{HLINE}{HLINE}{LR}
+```
+
+| | |
+| --- | --- |
+| lines | `HLINE VLINE UL UR LL LR TLEFT TRIGHT TTOP TBOT CROSS` |
+| blocks | `BLOCK UPPER LOWER LEFTH RIGHTH LTSHADE MDSHADE DKSHADE` |
+| quarters | `QUL QUR QLL QLR DIAGA DIAGB` |
+| bars | `BAR1`–`BAR8` upwards, `COL1`–`COL8` rightwards |
+| diagonals | `DIAGUP DIAGDN DIAGX` |
+| the rest | `HEART DIAMOND CLUB SPADE BALL CIRCLE PI CHECK ARROWUP ARROWLEFT DOT` |
+
+A brace holding anything that is not one of these names is left exactly as
+written, so `{WIBBLE}` stays `{WIBBLE}`; `\{` forces a literal brace. Quoted
+strings in expressions are literal text too, so `C:$S="{HEART}"` holds the
+heart, and `PET()` takes the same names when the name has to be worked out:
+
+```
+C:$BAR=$BAR+"{BLOCK}"
+T:#(PET("BAR"+STR(#HEIGHT)))
+```
+
+They work with or without `--c64` — they are only characters. The terminal
+has no C64 font, so each is drawn with the nearest thing Unicode offers, and
+a cell on the C64 screen holds one character however many bytes it takes. Be
+warned that a few of them — the card suits, `BALL`, `CIRCLE`, `PI`, `CHECK` —
+are ambiguous-width, and a terminal set to draw those double will push a line
+of them out of true.
+
 ## Where this differs from the cartridge
 
 The language is the C64 one. The machine underneath is not, so:
@@ -333,9 +375,9 @@ The language is the C64 one. The machine underneath is not, so:
   filters, no envelopes beyond a click-suppressing fade, no three voices.
 - **The screen is a terminal**, unless you ask for `--c64`, which draws the
   40x25 screen and its border in colour and gives `SC:` to drive it. Even
-  then there is no PETSCII: colour and cursor control come from `SC:` rather
-  than from control codes buried in `T:` text, and the character set is
-  whatever your terminal has.
+  then, colour and cursor control come from `SC:` rather than from control
+  codes buried in `T:` text, and the graphics are named rather than typed and
+  drawn with the nearest Unicode rather than in the C64's own font.
 - **Added for comfort:** `#(...)` in typed text, `?` as well as `*` in `M:`
   patterns, semicolon-separated assignments in `C:`, the string functions, and
   long command spellings (`TYPE:` for `T:`).
@@ -352,7 +394,7 @@ src/Interpreter.php  the run loop
 src/Store.php        variables, arrays, the match flag
 src/Turtle.php       G: -> SVG
 src/Sound.php        S: -> WAV
-examples/            fifteen programs, from hello to risk
+examples/            sixteen programs, from hello to risk
 tests/run.php        the test suite
 ```
 

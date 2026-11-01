@@ -192,6 +192,24 @@ function artefacts(string $bin, string $dir, int $pass, int $fail): array
             return null;
         },
 
+        'the c64 screen counts characters, not bytes' => function () use ($bin): ?string {
+            // Fifty blocks is 150 bytes; it must break after 40 characters.
+            [$out] = run($bin, [
+                '--c64', '-e',
+                "C:\$B=\"\"\nC:#I=1\n*L\nC:\$B=\$B+\"{BLOCK}\"\nC:#I=#I+1\nJ(#I<=50):*L\nT:\$B",
+            ]);
+            $longest = 0;
+            foreach (preg_split('/\e\[[0-9;]*[A-Za-z]/', $out) ?: [] as $piece) {
+                if (preg_match('/(?:\x{2588})+/u', $piece, $run)) {
+                    $longest = max($longest, (int) (strlen($run[0]) / 3));
+                }
+            }
+            if ($longest !== 40) {
+                return "longest unbroken run is $longest blocks, expected 40";
+            }
+            return null;
+        },
+
         'sound stays silent without --sound' => function () use ($bin, $tmp): ?string {
             [$out, $code] = run($bin, ['-e', 'S:C4 10', '--graphics', "$tmp/x.svg"]);
             return ($out === '' && $code === 0) ? null : 'unexpected output: ' . $out;

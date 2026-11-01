@@ -416,7 +416,7 @@ final class Interpreter
      */
     private function interp(string $s, ?int $line): string
     {
-        if ($s === '' || !preg_match('/[#$%\\\\]/', $s)) {
+        if ($s === '' || !preg_match('/[#$%{\\\\]/', $s)) {
             return $s;
         }
 
@@ -427,10 +427,27 @@ final class Interpreter
         while ($i < $n) {
             $c = $s[$i];
 
-            if ($c === '\\' && isset($s[$i + 1]) && str_contains('#$%\\', $s[$i + 1])) {
+            if ($c === '\\' && isset($s[$i + 1]) && str_contains('#$%{\\', $s[$i + 1])) {
                 $out .= $s[$i + 1];
                 $i += 2;
                 continue;
+            }
+
+            // {HEART} and the rest of the C64's graphics. A brace holding
+            // anything else is left exactly as it was written.
+            if ($c === '{') {
+                $close = strpos($s, '}', $i + 1);
+                if ($close !== false) {
+                    $name = substr($s, $i + 1, $close - $i - 1);
+                    $char = preg_match('/^[A-Za-z][A-Za-z0-9]*$/', $name)
+                        ? Petscii::char($name)
+                        : null;
+                    if ($char !== null) {
+                        $out .= $char;
+                        $i = $close + 1;
+                        continue;
+                    }
+                }
             }
 
             $isSigil = $c === '#' || $c === '$'

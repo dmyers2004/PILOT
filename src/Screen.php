@@ -26,7 +26,9 @@ final class Screen
     private const BORDER_X = 2;   // columns of border down each side
     private const BORDER_Y = 1;   // rows of border top and bottom
 
-    /** @var array<int,string> ROWS lines of exactly COLS characters */
+    /** @var array<int,array<int,string>> ROWS rows of COLS cells, one
+     *       character each -- an array, not a string, because a PETSCII
+     *       graphic is several bytes and a cell is still one column. */
     private array $buf = [];
     /** @var array<int,array<int,int>> the ink of every cell */
     private array $cellInk = [];
@@ -62,7 +64,7 @@ final class Screen
 
     private function blank(): void
     {
-        $this->buf = array_fill(0, self::ROWS, str_repeat(' ', self::COLS));
+        $this->buf = array_fill(0, self::ROWS, array_fill(0, self::COLS, ' '));
         $this->cellInk = array_fill(0, self::ROWS, array_fill(0, self::COLS, $this->ink));
         $this->cellRev = array_fill(0, self::ROWS, array_fill(0, self::COLS, false));
         $this->x = 0;
@@ -267,9 +269,7 @@ final class Screen
         $s = $this->cursor();
         $scrolled = false;
 
-        for ($i = 0, $n = strlen($text); $i < $n; $i++) {
-            $c = $text[$i];
-
+        foreach (Petscii::split($text) as $c) {
             if ($c === "\n") {
                 $scrolled = $this->newline() || $scrolled;
                 $s .= $this->cursor();
@@ -313,7 +313,7 @@ final class Screen
         array_shift($this->buf);
         array_shift($this->cellInk);
         array_shift($this->cellRev);
-        $this->buf[] = str_repeat(' ', self::COLS);
+        $this->buf[] = array_fill(0, self::COLS, ' ');
         $this->cellInk[] = array_fill(0, self::COLS, $this->ink);
         $this->cellRev[] = array_fill(0, self::COLS, false);
         $this->y = self::ROWS - 1;
@@ -330,8 +330,11 @@ final class Screen
         $this->start();
         $text = strtoupper($text);
 
-        for ($i = 0, $n = strlen($text); $i < $n && $this->x < self::COLS; $i++) {
-            $this->put($text[$i]);
+        foreach (Petscii::split($text) as $c) {
+            if ($this->x >= self::COLS) {
+                break;
+            }
+            $this->put($c);
             $this->x++;
         }
         $this->newline();
