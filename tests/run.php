@@ -139,6 +139,40 @@ function artefacts(string $bin, string $dir, int $pass, int $fail): array
             return null;
         },
 
+        'the c64 screen draws a 40x25 frame' => function () use ($bin): ?string {
+            // Fifty characters must break after exactly forty.
+            [$out] = run($bin, ['--c64', '-e', 'T:' . str_repeat('X', 50)]);
+            if (!str_contains($out, "\e[2J")) {
+                return 'never cleared the screen';
+            }
+            if (!str_contains($out, "\e[48;2;0;136;255m")) {
+                return 'no light blue border';
+            }
+            if (!str_contains($out, "\e[48;2;0;0;170m")) {
+                return 'no blue paper';
+            }
+            // Between column 40 and column 1 of the next row there has to
+            // be a cursor move, so no unbroken run may exceed forty.
+            $longest = 0;
+            foreach (preg_split('/\e\[[0-9;]*[A-Za-z]/', $out) ?: [] as $piece) {
+                if (preg_match('/X+/', $piece, $run)) {
+                    $longest = max($longest, strlen($run[0]));
+                }
+            }
+            if ($longest !== 40) {
+                return "longest unbroken run is $longest, expected 40";
+            }
+            // 25 screen rows plus one border row top and bottom is 27,
+            // and on the way out the cursor parks on row 28, below it all.
+            preg_match_all('/\e\[(\d+);1H/', $out, $m);
+            $rows = array_unique(array_map('intval', $m[1]));
+            sort($rows);
+            if ($rows !== range(1, 28)) {
+                return 'frame rows are ' . implode(',', $rows);
+            }
+            return null;
+        },
+
         'sound stays silent without --sound' => function () use ($bin, $tmp): ?string {
             [$out, $code] = run($bin, ['-e', 'S:C4 10', '--graphics', "$tmp/x.svg"]);
             return ($out === '' && $code === 0) ? null : 'unexpected output: ' . $out;

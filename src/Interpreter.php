@@ -17,6 +17,7 @@ final class Interpreter
     private Expression $expr;
     private Turtle $turtle;
     private Sound $sound;
+    private ?Screen $screen = null;
 
     private int $pc = 0;
     /** @var array<int,int> return addresses pushed by U: */
@@ -45,6 +46,9 @@ final class Interpreter
         if ($this->opt->seed !== null) {
             mt_srand($this->opt->seed);
         }
+        if ($this->opt->c64) {
+            $this->screen = new Screen($this->out);
+        }
     }
 
     public function run(Program $program): void
@@ -52,19 +56,24 @@ final class Interpreter
         $this->program = $program;
         $this->pc = 0;
 
-        while (!$this->halted && $this->pc < count($this->program->stmts)) {
-            $stmt = $this->program->stmts[$this->pc];
-            $this->pc++;
+        try {
+            while (!$this->halted && $this->pc < count($this->program->stmts)) {
+                $stmt = $this->program->stmts[$this->pc];
+                $this->pc++;
 
-            if ($this->opt->maxSteps > 0 && ++$this->steps > $this->opt->maxSteps) {
-                throw new PilotError('step limit reached; the program may be looping', $stmt->srcLine);
+                if ($this->opt->maxSteps > 0 && ++$this->steps > $this->opt->maxSteps) {
+                    throw new PilotError('step limit reached; the program may be looping', $stmt->srcLine);
+                }
+                if ($this->opt->trace) {
+                    fwrite(STDERR, sprintf("[%4d] %s\n", $stmt->srcLine, $stmt->source));
+                }
+                if ($this->allowed($stmt)) {
+                    $this->exec($stmt);
+                }
             }
-            if ($this->opt->trace) {
-                fwrite(STDERR, sprintf("[%4d] %s\n", $stmt->srcLine, $stmt->source));
-            }
-            if ($this->allowed($stmt)) {
-                $this->exec($stmt);
-            }
+        } finally {
+            // Put the terminal back, however the run ended.
+            $this->screen?->close();
         }
 
         $this->finish();
@@ -110,6 +119,10 @@ final class Interpreter
 
     private function write(string $text): void
     {
+        if ($this->screen !== null) {
+            $this->screen->write($text);
+            return;
+        }
         fwrite($this->out, $text);
         fflush($this->out);
     }
@@ -127,7 +140,11 @@ final class Interpreter
             return;
         }
         $text = rtrim($line, "\r\n");
-        if ($this->opt->echoInput) {
+        if ($this->screen !== null) {
+            // The terminal echoed it already; this keeps the screen's own
+            // idea of the glass in step.
+            $this->screen->accepted($text);
+        } elseif ($this->opt->echoInput) {
             $this->write($text . "\n");
         }
 

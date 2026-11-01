@@ -35,6 +35,7 @@ No dependencies beyond PHP 8.1 or newer.
 | `--trace` | print each statement to stderr as it runs |
 | `--fast` | ignore the delays asked for by `PA:` |
 | `--echo` | echo accepted input, so piped runs read like live ones |
+| `--c64` | draw on a 40x25 Commodore 64 screen, in ANSI colour |
 | `--graphics FILE` | where `G:` drawings go (default `<program>.svg`) |
 | `--no-graphics` | draw nothing to disk |
 | `--sound FILE` | render `S:` notes to a WAV (default: silent) |
@@ -187,9 +188,17 @@ when it cannot — which is why both `$GREETING` and `$TITLE` above do what they
 look like they do.
 
 Operators, loosest first: `OR` `|`, `AND` `&`, `NOT` `!`, then `= <> < > <= >=`,
-then `+ -`, then `* / %`, then unary `-`, then `^`. `+` concatenates when either
-side is text. Comparisons between two numbers are numeric; otherwise they
-compare text, ignoring case.
+then `+ -`, then `* / %`, then unary `-`, then `^`.
+
+`+` adds when both sides are numbers and joins them as text otherwise. It
+decides by what a value *is*, not by what it looks like, so building a string
+out of digits stays a string: `STR(5)+" "+STR(4)` is `5 4`, not `9`. Use
+`VAL()` to go the other way. The other arithmetic operators read text as a
+number, so `"10"*2` is 20.
+
+Comparisons are looser, because judging what someone typed usually wants them
+to be: two values that both look like numbers compare as numbers, and anything
+else compares as text, ignoring case.
 
 Functions: `ABS INT ROUND SGN SQR SIN COS TAN ATN EXP LOG MIN MAX RND`,
 `LEN VAL STR ASC CHR UPPER LOWER TRIM LEFT RIGHT MID INSTR`, and `PI TIME`.
@@ -249,6 +258,7 @@ Nothing is audible unless you ask for a file:
 | `adventure.plt` | three rooms and a lamp, with the rooms as a computed jump |
 | `hangman.plt` | string handling — `MID`, `LEN`, `INSTR`, built up a letter at a time |
 | `battleship.plt` | a hidden fleet on a lettered grid — one array standing in for two dimensions |
+| `risk.plt` | the forty-two territory map, dice combat, and an opponent |
 | `spiral.plt` | a square spiral with a pentagram over it |
 | `rosette.plt` | twelve circles round one point, cycling through the palette |
 | `sine.plt` | the turtle plotting a computed curve |
@@ -256,6 +266,23 @@ Nothing is audible unless you ask for a file:
 
 The three graphics examples have their drawings checked in beside them, so you
 can see what they produce without running anything.
+
+## The C64 screen
+
+`--c64` puts the output on a Commodore 64 screen rather than letting it run
+down the terminal: forty columns by twenty-five rows, light blue on blue
+inside a light blue border, in the same sixteen colours the turtle draws
+with. Text wraps at column 40, the screen scrolls at the bottom, and what you
+type appears on the glass in upper case, the way the machine came out of the
+box.
+
+```bash
+./bin/pilot --c64 examples/risk.plt
+```
+
+It needs a terminal that does 24-bit colour, which most now do. Programs
+written for a wider terminal still run — they just wrap. `risk.plt` is laid
+out to fit the forty columns exactly, board and all.
 
 ## Where this differs from the cartridge
 
@@ -266,8 +293,10 @@ The language is the C64 one. The machine underneath is not, so:
   bitmap you watch fill in.
 - **Sound is a file, not a SID.** One square-wave voice, rendered to WAV. No
   filters, no envelopes beyond a click-suppressing fade, no three voices.
-- **The screen is a terminal.** No PETSCII, no colour codes in `T:`, no
-  cursor control, and the character set is whatever your terminal has.
+- **The screen is a terminal**, unless you ask for `--c64`, which draws the
+  40x25 screen and its border in colour. Even then there is no PETSCII, no
+  colour control from inside `T:`, and no cursor addressing: the character
+  set is whatever your terminal has.
 - **Added for comfort:** `#(...)` in typed text, `?` as well as `*` in `M:`
   patterns, semicolon-separated assignments in `C:`, the string functions, and
   long command spellings (`TYPE:` for `T:`).
@@ -284,7 +313,7 @@ src/Interpreter.php  the run loop
 src/Store.php        variables, arrays, the match flag
 src/Turtle.php       G: -> SVG
 src/Sound.php        S: -> WAV
-examples/            thirteen programs, from hello to battleship
+examples/            fourteen programs, from hello to risk
 tests/run.php        the test suite
 ```
 

@@ -304,8 +304,12 @@ final class Expression
             $op = $this->takeOp();
             $r = $this->parseMul();
             if ($op === '+') {
-                $v = (self::looksNumeric($v) && self::looksNumeric($r))
-                    ? self::toNum($v) + self::toNum($r)
+                // Adds only when both sides are numbers; anything with text
+                // in it joins instead. Deciding by what a value LOOKS like
+                // made "5 " + "4" come out as 9, which is no way to build a
+                // string out of digits.
+                $v = (is_float($v) && is_float($r))
+                    ? $v + $r
                     : self::toStr($v) . self::toStr($r);
             } else {
                 $v = self::toNum($v) - self::toNum($r);

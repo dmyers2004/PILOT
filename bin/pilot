@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Pilot;
 
 foreach (['PilotError', 'Options', 'Statement', 'Program', 'Parser', 'Store',
-          'Expression', 'Turtle', 'Sound', 'Interpreter'] as $class) {
+          'Expression', 'Turtle', 'Sound', 'Screen', 'Interpreter'] as $class) {
     require __DIR__ . '/../src/' . $class . '.php';
 }
 
@@ -22,6 +22,7 @@ options:
       --trace         print each statement to stderr as it runs
       --fast          ignore the delays asked for by PA:
       --echo          echo accepted input, so piped runs read like live ones
+      --c64           draw on a 40x25 Commodore 64 screen, in ANSI colour
       --graphics FILE write G: drawings here (default: <program>.svg)
       --no-graphics   draw nothing to disk
       --sound FILE    render S: notes to a WAV file (default: silent)
@@ -70,6 +71,7 @@ function main(array $argv): int
             case '--trace':              $opt->trace = true; break;
             case '--fast':               $opt->fast = true; break;
             case '--echo':               $opt->echoInput = true; break;
+            case '--c64':                $opt->c64 = true; break;
             case '--graphics':           $opt->graphicsFile = $next($arg); break;
             case '--no-graphics':        $opt->graphicsOutput = false; break;
             case '--sound':              $opt->soundFile = $next($arg); break;
