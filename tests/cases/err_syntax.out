@@ -1,0 +1,2 @@
+pilot: err_syntax.plt:2: unknown command 'Z'
+[exit 1]

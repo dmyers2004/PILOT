@@ -1,0 +1,4 @@
+# Written by running the interpreter, not by hand.
+# examples/spiral.svg is checked in on purpose: the README points at it.
+/*.svg
+*.wav

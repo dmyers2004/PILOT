@@ -1,0 +1,17 @@
+R: Guess the number. Run with --seed N for the same number every time.
+C:#SECRET=RND(100);#TRIES=0
+
+T:I AM THINKING OF A NUMBER FROM 1 TO 100.
+T:
+
+*ASK
+TH:YOUR GUESS? 
+A:#GUESS
+C:#TRIES=#TRIES+1
+T(#GUESS<#SECRET):TOO LOW.
+T(#GUESS>#SECRET):TOO HIGH.
+J(#GUESS<>#SECRET):*ASK
+
+T:
+T:GOT IT IN #TRIES TRIES. IT WAS #SECRET.
+E:

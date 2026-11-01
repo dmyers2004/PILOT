@@ -1,0 +1,108 @@
+#!/usr/bin/env php
+<?php
+declare(strict_types=1);
+
+namespace Pilot;
+
+foreach (['PilotError', 'Options', 'Statement', 'Program', 'Parser', 'Store',
+          'Expression', 'Turtle', 'Sound', 'Interpreter'] as $class) {
+    require __DIR__ . '/../src/' . $class . '.php';
+}
+
+const VERSION = '1.0.0';
+
+const USAGE = <<<TXT
+pilot - a PILOT interpreter, after Commodore 64 PILOT
+
+usage: pilot [options] program.plt
+       pilot [options] -e 'T:HELLO'
+
+options:
+  -e, --eval CODE     run CODE instead of a file
+      --trace         print each statement to stderr as it runs
+      --fast          ignore the delays asked for by PA:
+      --echo          echo accepted input, so piped runs read like live ones
+      --graphics FILE write G: drawings here (default: <program>.svg)
+      --no-graphics   draw nothing to disk
+      --sound FILE    render S: notes to a WAV file (default: silent)
+      --seed N        fix the seed for RND(), for repeatable runs
+      --max-steps N   give up after N statements
+  -h, --help          this text
+  -V, --version       version
+
+TXT;
+
+function fail(string $message, int $code = 2): never
+{
+    fwrite(STDERR, 'pilot: ' . $message . "\n");
+    exit($code);
+}
+
+/** @param array<int,string> $argv */
+function main(array $argv): int
+{
+    $opt = new Options();
+    $path = null;
+    $source = null;
+    $args = array_slice($argv, 1);
+
+    $next = function (string $flag) use (&$args): string {
+        $value = array_shift($args);
+        if ($value === null) {
+            fail("$flag needs a value");
+        }
+        return $value;
+    };
+
+    while ($args !== []) {
+        $arg = array_shift($args);
+
+        // --flag=value is the same as --flag value
+        if (str_starts_with($arg, '--') && str_contains($arg, '=')) {
+            [$arg, $value] = explode('=', $arg, 2);
+            array_unshift($args, $value);
+        }
+
+        switch ($arg) {
+            case '-h': case '--help':    echo USAGE; return 0;
+            case '-V': case '--version': echo 'pilot ' . VERSION . "\n"; return 0;
+            case '-e': case '--eval':    $source = $next($arg); break;
+            case '--trace':              $opt->trace = true; break;
+            case '--fast':               $opt->fast = true; break;
+            case '--echo':               $opt->echoInput = true; break;
+            case '--graphics':           $opt->graphicsFile = $next($arg); break;
+            case '--no-graphics':        $opt->graphicsOutput = false; break;
+            case '--sound':              $opt->soundFile = $next($arg); break;
+            case '--seed':               $opt->seed = (int) $next($arg); break;
+            case '--max-steps':          $opt->maxSteps = (int) $next($arg); break;
+            default:
+                if ($arg !== '' && $arg[0] === '-' && $arg !== '-') {
+                    fail("unknown option '$arg'");
+                }
+                if ($path !== null) {
+                    fail('only one program at a time');
+                }
+                $path = $arg;
+        }
+    }
+
+    if ($source === null && $path === null) {
+        fwrite(STDERR, USAGE);
+        return 2;
+    }
+
+    try {
+        $program = $source !== null
+            ? Parser::parse($source, '<eval>')
+            : Parser::parseFile((string) $path);
+
+        (new Interpreter($opt))->run($program);
+    } catch (PilotError $e) {
+        fwrite(STDERR, $e->format($source !== null ? '<eval>' : (string) $path) . "\n");
+        return 1;
+    }
+
+    return 0;
+}
+
+exit(main($argv));

@@ -1,0 +1,18 @@
+R: Five multiplication questions, with a running score.
+C:#RIGHT=0;#N=0
+
+T:TIMES TABLES. FIVE QUESTIONS.
+T:
+
+*DRILL
+C:#A=RND(9);#B=RND(9);#N=#N+1;#WANT=#A*#B
+TH:#N) WHAT IS #A TIMES #B? 
+A:#ANS
+T(#ANS=#WANT):CORRECT.
+C(#ANS=#WANT):#RIGHT=#RIGHT+1
+T(#ANS<>#WANT):NO -- #A TIMES #B IS #WANT.
+J(#N<5):*DRILL
+
+T:
+T:#RIGHT OUT OF 5. THAT IS #(INT(#RIGHT*100/5)) PER CENT.
+E:
