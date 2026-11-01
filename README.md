@@ -248,6 +248,7 @@ Nothing is audible unless you ask for a file:
 | `eliza.plt` | the doctor is in: `%R`, pattern order, a computed jump |
 | `adventure.plt` | three rooms and a lamp, with the rooms as a computed jump |
 | `hangman.plt` | string handling — `MID`, `LEN`, `INSTR`, built up a letter at a time |
+| `battleship.plt` | a hidden fleet on a lettered grid — one array standing in for two dimensions |
 | `spiral.plt` | a square spiral with a pentagram over it |
 | `rosette.plt` | twelve circles round one point, cycling through the palette |
 | `sine.plt` | the turtle plotting a computed curve |
@@ -283,7 +284,7 @@ src/Interpreter.php  the run loop
 src/Store.php        variables, arrays, the match flag
 src/Turtle.php       G: -> SVG
 src/Sound.php        S: -> WAV
-examples/            twelve programs, from hello to a text adventure
+examples/            thirteen programs, from hello to battleship
 tests/run.php        the test suite
 ```
 
